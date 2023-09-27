@@ -369,7 +369,6 @@ def more(message):
         bot.register_next_step_handler(msg, moreLess)
 
     except Exception as ex:
-
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         button1 = types.KeyboardButton('Проверить баланс')
         button2 = types.KeyboardButton('Играть')
