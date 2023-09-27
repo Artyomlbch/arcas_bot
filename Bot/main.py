@@ -271,7 +271,7 @@ def bot_message(message):
         bot.reply_to(message, 'Для игры используйте команду: /dice [ставка]. Возможные выйгрыши(число > 500 - 2x; > 800 - 2.5x; > 950 - 10x)')
 
     elif message.text == 'Выйти':
-        bot.reply_to(message, 'Хорошо, выходим..', reply_markup=main_menu())
+        bot.reply_to(message, 'Хорошо, выходим...', reply_markup=main_menu())
 
     elif message.text == 'Статистика':
         user_id = message.from_user.id
@@ -509,7 +509,6 @@ def dice_game(call):
         print(ex)
         bot.send_message(user_id, 'Недостаточно средств, пополните баланс')
     bot.answer_callback_query(callback_query_id=call.id)
-
 
 
 bot.enable_save_next_step_handlers(delay=2)
