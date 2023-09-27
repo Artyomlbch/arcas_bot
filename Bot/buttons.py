@@ -7,7 +7,6 @@ def main_menu():
     button3 = types.KeyboardButton('Профиль')
     button4 = types.KeyboardButton('Перевести')
     markup.add(button1, button2, button3, button4)
-
     return markup
 
 def games_menu():
@@ -18,7 +17,6 @@ def games_menu():
     button4 = types.KeyboardButton('Рулетка')
     button5 = types.KeyboardButton('Выйти')
     markup.add(button1, button2, button3, button4, button5)
-
     return markup
 
 def check_balance():
@@ -27,7 +25,6 @@ def check_balance():
     button2 = types.KeyboardButton('Вывести деньги')
     button3 = types.KeyboardButton('Играть')
     markup.add(button1, button2, button3)
-
     return markup
 
 def add_balance_menu():
@@ -35,7 +32,6 @@ def add_balance_menu():
     button1 = types.KeyboardButton('Пополнить баланс')
     button2 = types.KeyboardButton('Выйти')
     markup.add(button1, button2)
-
     return markup
 
 def dice_menu():
@@ -43,7 +39,6 @@ def dice_menu():
     button1 = types.KeyboardButton('Изменить ставку')
     button2 = types.KeyboardButton('Выйти')
     markup.add(button1, button2)
-
     return markup
 
 def dice_buttons():
@@ -55,7 +50,6 @@ def dice_buttons():
     item5 = types.InlineKeyboardButton('5', callback_data='5')
     item6 = types.InlineKeyboardButton('6', callback_data='6')
     inline.add(item1, item2, item3, item4, item5, item6)
-
     return inline
 
 def profile_menu():
@@ -64,14 +58,12 @@ def profile_menu():
     button2 = types.KeyboardButton('Статистика')
     button3 = types.KeyboardButton('Сменить ник')
     markup.add(button1, button2, button3)
-
     return markup
 
 def quit_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     button1 = types.KeyboardButton('Выйти')
     markup.add(button1)
-
     return markup
 
 def bet_menu():
@@ -80,7 +72,6 @@ def bet_menu():
     button2 = types.KeyboardButton('500')
     button3 = types.KeyboardButton('1000')
     markup.add(button1, button2, button3)
-
     return markup
 
 def admin_menu():
@@ -90,5 +81,4 @@ def admin_menu():
     item3 = types.InlineKeyboardButton('Разослать сообщение пользователю', callback_data='sto')
     item4 = types.InlineKeyboardButton('Выдать себе 50.000р', callback_data='mny')
     inline.add(item1, item2, item3, item4)
-
     return inline
