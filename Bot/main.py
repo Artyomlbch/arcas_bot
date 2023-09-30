@@ -75,9 +75,11 @@ def roulette_number(message):
         bot.send_message(message.from_user.id, 'Рулетка крутится...')
         if num == rand_num:
             win(rand_num)
+            db.add_win(message.from_user.id)
         else:
             bot.send_message(message.from_user.id, f"И выпадает **** {rand_num} ****")
             bot.send_message(message.from_user.id, f"Вы проиграли. Ваш баланс: {db.get_balance(message.from_user.id)}р")
+            db.add_lose(message.from_user.id)
     except ValueError:
         bot.send_message(message.from_user.id, 'Неподходящее число')
     except Exception as ex:
@@ -145,6 +147,7 @@ def roulette_clr(message):
             else:
                 bot.send_message(message.from_user.id, f'Вы проиграли :(')
                 bot.send_message(message.from_user.id, f'Баланс: {db.get_balance(message.from_user.id)}р')
+                db.add_lose(message.from_user.id)
             break
     except ValueError:
         bot.send_message(message.from_user.id, 'Введите r или b')
@@ -343,14 +346,14 @@ def change_nickname(message):
 def add_blnc(message):
     try:
         amount = int(message.text)
-        if amount <= 100000:
+        if amount <= 500000:
             db.add_balance(message.from_user.id, amount)
             bot.send_message(message.from_user.id, f'Успешно! Ваш баланс: {db.get_balance(message.from_user.id)}р')
         else:
             raise Exception
     except Exception as ex:
         print(ex)
-        bot.send_message(message.from_user.id, 'Меньше 100.000р...')
+        bot.send_message(message.from_user.id, 'Меньше 500.000р...')
 
 def min_blnc(message):
     try:
@@ -392,7 +395,6 @@ def send_money(message):
         bot.send_message(message.from_user.id, 'Что-то пошло не так (проверьте ID или сумму)')
 
 def moreLess(message):
-
     inline = types.InlineKeyboardMarkup()
     item1 = types.InlineKeyboardButton(f'Больше >> {100 - int(message.text)}%/{round(100 / (100 - int(message.text)), 2)}x',
                                        callback_data='more')
