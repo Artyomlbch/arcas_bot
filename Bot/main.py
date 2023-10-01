@@ -1,7 +1,6 @@
 import telebot
 import random
 from database import Database
-import config as cfg
 from datetime import datetime, date
 import time
 from buttons import *
