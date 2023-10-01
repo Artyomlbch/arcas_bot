@@ -15,6 +15,7 @@ ADMIN_ID = int(os.getenv('USER_ID'))
 db = Database('users.db')
 bot = telebot.TeleBot(os.getenv('TOKEN'))
 
+
 @bot.message_handler(commands=['register'])
 def reg(message):
     user_id = message.from_user.id
@@ -26,10 +27,12 @@ def reg(message):
         bot.send_message(user_id, 'Вы уже зарегестрированы!')
         bot.send_message(message.chat.id, f'Привет, {db.get_nickname(user_id)}, выбери игру!', reply_markup=main_menu())
 
+
 @bot.message_handler(commands=['start', 'help'])
 def start(message):
     user_id = message.from_user.id
     bot.send_message(user_id, 'Добро пожаловать в ботяру с играми, для регистрации пропишите /register')
+
 
 @bot.message_handler(commands=['admin'])
 def admin(message):
@@ -38,12 +41,14 @@ def admin(message):
     else:
         bot.send_message(message.from_user.id, 'У вас нет прав администратора! Идите на хуй')
 
+
 @bot.message_handler(commands=['balance'])
 def get_user_balance(message):
     try:
         return bot.send_message(message.from_user.id, f'Ваш баланс: {db.get_balance(message.from_user.id)}р')
     except Exception as ex:
         print(ex)
+
 
 @bot.message_handler(commands=['roulette'])
 def roulette_info(message):
@@ -52,6 +57,7 @@ def roulette_info(message):
     bot.send_message(message.from_user.id, 'Информация!!!\nДля ставки на число пишите: /roulettenum [ставка] [число]'
                                            '\nДля ставки на сектор пишите: /roulettesec [ставка] [1 или 2 или 3]'
                                            '\nДля ставки на цвет пишите: /rouletteclr [ставка] [r или b]')
+
 
 @bot.message_handler(commands=['roulettenum'])
 def roulette_number(message):
@@ -85,6 +91,7 @@ def roulette_number(message):
         print(ex)
         bot.send_message(message.from_user.id, 'Чтобы пополнить баланс пропишите Пополнить баланс')
 
+
 @bot.message_handler(commands=['roulettesec'])
 def roulette_sec(message):
     if len(message.text.split()) == 1:
@@ -99,13 +106,15 @@ def roulette_sec(message):
         time.sleep(1)
         win_sector = random.choice([1, 2, 3])
         if num == win_sector:
-            bot.send_message(message.from_user.id, f'Выпал {win_sector} сектор, число **** {random.choice(sectors[num - 1])} ****')
+            bot.send_message(message.from_user.id,
+                             f'Выпал {win_sector} сектор, число **** {random.choice(sectors[num - 1])} ****')
             bot.send_message(message.from_user.id, f'Победа!! Вы выиграли {bet * 3}р.')
             db.add_balance(message.from_user.id, bet * 3)
             bot.send_message(message.from_user.id, f'Баланс: {db.get_balance(message.from_user.id)}p')
             db.add_win(message.from_user.id)
         else:
-            bot.send_message(message.from_user.id, f'Выпал {win_sector} сектор, число **** {random.choice(sectors[win_sector - 1])} ****')
+            bot.send_message(message.from_user.id,
+                             f'Выпал {win_sector} сектор, число **** {random.choice(sectors[win_sector - 1])} ****')
             bot.send_message(message.from_user.id, f'Вы проиграли, ваш баланс: {db.get_balance(message.from_user.id)}р')
             db.add_lose(message.from_user.id)
     except ValueError:
@@ -113,6 +122,7 @@ def roulette_sec(message):
     except Exception as ex:
         print(ex)
         bot.send_message(message.from_user.id, f'Недостаточно средств, баланс: {db.get_balance(message.from_user.id)}p')
+
 
 @bot.message_handler(commands=['rouletteclr'])
 def roulette_clr(message):
@@ -122,11 +132,13 @@ def roulette_clr(message):
     bet = int(message.text.split()[1])
     numbersR, numbersB = {'❤️': [i for i in range(2, 38, 2)]}, {'🖤': [i for i in range(1, 36, 2)]}
     red_or_black = [numbersR, numbersB]
+
     def win(color: str):
         bot.send_message(message.from_user.id, f'{color} Выигрыш: {bet * 2}p')
         db.add_balance(message.from_user.id, bet * 2)
         bot.send_message(message.from_user.id, f'Баланс: {db.get_balance(message.from_user.id)}р')
         db.add_win(message.from_user.id)
+
     try:
         if clr == 'r':
             clr = '❤️'
@@ -152,7 +164,9 @@ def roulette_clr(message):
         bot.send_message(message.from_user.id, 'Введите r или b')
     except Exception as ex:
         print(ex)
-        bot.send_message(message.from_user.id, f'Балик пополни, баланс: {db.get_balance(message.from_user.id)}р', reply_markup=add_balance_menu())
+        bot.send_message(message.from_user.id, f'Балик пополни, баланс: {db.get_balance(message.from_user.id)}р',
+                         reply_markup=add_balance_menu())
+
 
 @bot.message_handler(commands=['dice'])
 def random_dice(message):
@@ -168,7 +182,7 @@ def random_dice(message):
     try:
         bet = int(message.text.split()[1])
         db.add_played(message.from_user.id)
-        if db.get_balance(user_id) == 0 or not(db.min_balance(user_id, bet)):
+        if db.get_balance(user_id) == 0 or not (db.min_balance(user_id, bet)):
             raise Exception
         if 500 < random_int < 800:
             win(2)
@@ -186,6 +200,7 @@ def random_dice(message):
         print(ex)
         bot.send_message(user_id, 'Недостаточно средств')
 
+
 @bot.callback_query_handler(lambda query: query.data == 'wu')
 def adm(call):
     info = ''
@@ -194,10 +209,12 @@ def adm(call):
     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=info)
     bot.answer_callback_query(callback_query_id=call.id)
 
+
 @bot.callback_query_handler(lambda query: query.data == 'sa')
 def send_all(call):
     msg = bot.reply_to(call.message, 'Введите сообщения для отправки')
     bot.register_next_step_handler(msg, send_msg_to_all)
+
 
 @bot.callback_query_handler(lambda query: query.data == 'mny')
 def give_money(call):
@@ -205,10 +222,12 @@ def give_money(call):
     t = f'Успешно! Ваш баланс: {db.get_balance(ADMIN_ID)}р'
     bot.edit_message_text(chat_id=ADMIN_ID, message_id=call.message.message_id, text=t)
 
+
 @bot.callback_query_handler(lambda query: query.data == 'sto')
 def send_all(call):
     msg = bot.reply_to(call.message, 'Введите ник пользователя и сообщения')
     bot.register_next_step_handler(msg, send_msg_to_user)
+
 
 def send_msg_to_user(message):
     for user_id in db.get_users_id():
@@ -217,11 +236,13 @@ def send_msg_to_user(message):
             bot.send_message(user_id, msg)
             bot.send_message(ADMIN_ID, 'Успешно!')
 
+
 def send_msg_to_all(message):
     for user_id in db.get_users_id():
         bot.send_message(user_id, message.text)
     else:
         bot.send_message(message.from_user.id, 'Успешно!')
+
 
 dice_stickers = ['CAACAgIAAxkBAAEFeGFi7FH1VZBDWkawMiTMcUbZiYuLLQACixUAAu-iSEvcMCGEtWaZoCkE',
                  'CAACAgIAAxkBAAEFeGNi7FOAh1uE9P3dyTLjhCHQnHKawwACzxEAAlKRQEtOAAGmnvjK7y8pBA',
@@ -229,6 +250,7 @@ dice_stickers = ['CAACAgIAAxkBAAEFeGFi7FH1VZBDWkawMiTMcUbZiYuLLQACixUAAu-iSEvcMC
                  'CAACAgIAAxkBAAEFeGdi7FOVbDEy_3bBT1yQgIPOGdqBbQACcREAAuzsQUu1GqzW_T-jpCkE',
                  'CAACAgIAAxkBAAEFeGli7FOg0OoSKIrFdLyZ6jb2tHEAARkAAqEPAAJBtUFLbsHChM0BoSEpBA',
                  'CAACAgIAAxkBAAEFeGti7FOsaftdN19xvSiWnwABnpNFCFIAAvYNAAL3rUhLVg8sKkK3KGMpBA']
+
 
 @bot.message_handler(content_types=['text'])
 def bot_message(message):
@@ -270,7 +292,8 @@ def bot_message(message):
         Ваш ID: {user_id}''', reply_markup=profile_menu())
 
     elif message.text == 'Рандом кости':
-        bot.reply_to(message, 'Для игры используйте команду: /dice [ставка]. Возможные выйгрыши(число > 500 - 2x; > 800 - 2.5x; > 950 - 10x)')
+        bot.reply_to(message,
+                     'Для игры используйте команду: /dice [ставка]. Возможные выйгрыши(число > 500 - 2x; > 800 - 2.5x; > 950 - 10x)')
 
     elif message.text == 'Выйти':
         bot.reply_to(message, 'Хорошо, выходим...', reply_markup=main_menu())
@@ -285,7 +308,8 @@ def bot_message(message):
         else:
             bot.send_message(user_id, f'''Игр сыграно: {db.get_played(user_id)}
                             Выйгрыши/проигрыши: {db.get_win(user_id)}/{db.get_lose(user_id)}
-                            Процент побед: {round(100 * (round(db.get_win(user_id) / db.get_played(user_id), 2)))}%''', reply_markup=quit_menu())
+                            Процент побед: {round(100 * (round(db.get_win(user_id) / db.get_played(user_id), 2)))}%''',
+                             reply_markup=quit_menu())
 
     elif message.text == 'Пополнить баланс':
         msg = bot.reply_to(message, 'Введите сумму пополнения.')
@@ -329,11 +353,14 @@ def register(message):
             db.set_signup(user_id, 'done')
             bot.send_message(user_id, 'Регистрация успешно завершена!')
 
-            bot.send_message(message.chat.id, f'Привет, {message.from_user.first_name}, выбери игру!', reply_markup=main_menu())
+            bot.send_message(message.chat.id, f'Привет, {message.from_user.first_name}, выбери игру!',
+                             reply_markup=main_menu())
+
 
 def get_num_fact(message):
     response = requests.get(f'http://numbersapi.com/{message.text}/math')
     bot.send_message(message.from_user.id, response.text)
+
 
 def change_nickname(message):
     try:
@@ -341,6 +368,7 @@ def change_nickname(message):
         bot.send_message(message.from_user.id, f'Успешно, теперь вы - {db.get_nickname(message.from_user.id)}')
     except Exception as ex:
         print(ex)
+
 
 def add_blnc(message):
     try:
@@ -354,6 +382,7 @@ def add_blnc(message):
         print(ex)
         bot.send_message(message.from_user.id, 'Меньше 500.000р...')
 
+
 def min_blnc(message):
     try:
         amount = int(message.text)
@@ -362,6 +391,7 @@ def min_blnc(message):
     except Exception as ex:
         print(ex)
         bot.send_message(message.from_user.id, 'Вы хотите вывести слишком много денег.')
+
 
 def more(message):
     try:
@@ -379,6 +409,7 @@ def more(message):
         bot.send_message(message.from_user.id, 'Слишком большая ставка или неправильно введенное число!',
                          reply_markup=markup)
 
+
 def send_money(message):
     try:
         if db.user_exists(int(message.text.split()[0])):
@@ -393,6 +424,7 @@ def send_money(message):
         print(ex)
         bot.send_message(message.from_user.id, 'Что-то пошло не так (проверьте ID или сумму)')
 
+
 def moreLess(message):
     inline = types.InlineKeyboardMarkup()
     item1 = types.InlineKeyboardButton(f'Больше >> {100 - int(message.text)}%/{round(100 / (100 - int(message.text)), 2)}x',
@@ -402,6 +434,7 @@ def moreLess(message):
     inline.add(item1, item2)
 
     bot.reply_to(message, f'{message.text}', reply_markup=inline)
+
 
 def dice(message):
     try:
@@ -416,7 +449,9 @@ def dice(message):
         button2 = types.KeyboardButton('Играть')
         markup.add(button1, button2)
 
-        bot.send_message(message.from_user.id, 'Слишком большая ставка или неправильно введенное число!', reply_markup=markup)
+        bot.send_message(message.from_user.id, 'Слишком большая ставка или неправильно введенное число!',
+                         reply_markup=markup)
+
 
 @bot.callback_query_handler(lambda query: query.data in ['more', 'less'])
 def more_game(call):
@@ -471,6 +506,7 @@ def more_game(call):
         bot.send_message(user_id, 'Недостаточно средств, пополните баланс')
 
     bot.answer_callback_query(callback_query_id=call.id)
+
 
 @bot.callback_query_handler(lambda query: query.data in '123456')
 def dice_game(call):
