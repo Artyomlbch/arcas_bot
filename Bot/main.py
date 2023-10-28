@@ -42,6 +42,11 @@ def admin(message):
         bot.send_message(message.from_user.id, 'У вас нет прав администратора! Идите на хуй')
 
 
+@bot.message_handler(commands=['get_admin_contact'])
+def send_admin_contact(message):
+    bot.send_contact(chat_id=message.from_user.id, phone_number='+79120810518', first_name='Artyomlbch')
+
+
 @bot.message_handler(commands=['balance'])
 def get_user_balance(message):
     try:
@@ -451,6 +456,7 @@ def dice(message):
 
         bot.send_message(message.from_user.id, 'Слишком большая ставка или неправильно введенное число!',
                          reply_markup=markup)
+
 
 
 @bot.callback_query_handler(lambda query: query.data in ['more', 'less'])
