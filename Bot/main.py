@@ -130,6 +130,9 @@ def roulette_sec(message):
 
 @bot.message_handler(commands=['send_message'])
 def send_message_to_user(message):
+    if len(message.text.split()) == 1:
+        bot.send_message(message.from_user.id, "Чтобы отправить сообщение, напишите\n/send_message nickname message")
+        return
     try:
         text = message.text.split()
         user = text[1]
