@@ -56,7 +56,7 @@ def get_user_balance(message):
 
 
 @bot.message_handler(commands=['roulette'])
-def roulette_info(message):
+def roulette_info(message: dict[str:str]) -> None:
     photo = open('casino-roulette-table-illustration-green-gambling-roulette-table-numbers-90513337.jpg', 'rb')
     bot.send_photo(message.chat.id, photo)
     bot.send_message(message.from_user.id, 'Информация!!!\nДля ставки на число пишите: /roulettenum [ставка] [число]'
@@ -127,6 +127,20 @@ def roulette_sec(message):
     except Exception as ex:
         print(ex)
         bot.send_message(message.from_user.id, f'Недостаточно средств, баланс: {db.get_balance(message.from_user.id)}p')
+
+@bot.message_handler(commands=['send_message'])
+def send_message_to_user(message):
+    try:
+        text = message.text.split()
+        user = text[1]
+        your_message = text[2]
+
+        message_to_send = f"{db.get_nickname(message.from_user.id)} отправил вам сообщение:\n{your_message}"
+        bot.send_message(db.get_id_by_nickname(user), message_to_send)
+        bot.send_message(message.from_user.id, "Успешно!")
+    except Exception as ex:
+        print(ex)
+        bot.send_message(message.from_user.id, "Такого пользователя нет.")
 
 
 @bot.message_handler(commands=['rouletteclr'])

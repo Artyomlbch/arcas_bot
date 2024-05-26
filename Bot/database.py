@@ -95,4 +95,13 @@ class Database:
             lose = int(self.cursor.execute("SELECT lose FROM users WHERE user_id = ?", (user_id,)).fetchone()[0]) + 1
             return self.cursor.execute("UPDATE users SET lose = ? WHERE user_id = ?", (lose, user_id))
 
+    def get_id_by_nickname(self, nickname):
+        with self.connection:
+            user_id = self.cursor.execute("SELECT user_id FROM users WHERE nickname = ?", (nickname,)).fetchone()[0]
+            if user_id:
+                return user_id
+            else:
+                raise Exception
+
+
 
