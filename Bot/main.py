@@ -208,10 +208,12 @@ def random_dice(message):
             raise Exception
         if 500 < random_int < 800:
             win(2)
-        elif 800 < random_int <= 995:
+        elif 800 < random_int < 950:
             win(2.5)
+        elif 950 <= random_int < 995:
+            win(8)
         elif 995 < random_int <= 1000:
-            win(20)
+            win(200)
         else:
             bot.send_message(user_id, f'Выпало: {random_int}. Вы проиграли.')
             db.add_lose(user_id)
@@ -315,7 +317,7 @@ def bot_message(message):
 
     elif message.text == 'Рандом кости':
         bot.reply_to(message,
-                     'Для игры используйте команду: /dice [ставка]. Возможные выйгрыши(число > 500 - 2x; > 800 - 2.5x; > 950 - 10x)')
+                     'Для игры используйте команду: /dice [ставка]. Возможные выйгрыши(число: [0; 500] - 2x; [500; 800] - 2.5x; [800; 995] - 8x, [995; 1000] - 200x)')
 
     elif message.text == 'Выйти':
         bot.reply_to(message, 'Хорошо, выходим...', reply_markup=main_menu())
