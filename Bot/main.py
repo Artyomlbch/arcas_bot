@@ -12,7 +12,7 @@ import requests
 load_dotenv(find_dotenv())
 
 ADMIN_ID = int(os.getenv('USER_ID'))
-db = Database('users.db')
+db = Database('Bot/users.db')
 bot = telebot.TeleBot(os.getenv('TOKEN'))
 
 
@@ -128,6 +128,7 @@ def roulette_sec(message):
         print(ex)
         bot.send_message(message.from_user.id, f'Недостаточно средств, баланс: {db.get_balance(message.from_user.id)}p')
 
+
 @bot.message_handler(commands=['send_message'])
 def send_message_to_user(message):
     if len(message.text.split()) == 1:
@@ -190,6 +191,151 @@ def roulette_clr(message):
                          reply_markup=add_balance_menu())
 
 
+def create_bj_cards():
+    cards = {"2": 2,
+             "3": 3,
+             "4": 4,
+             "5": 5,
+             "6": 6,
+             "7": 7,
+             "8": 8,
+             "9": 9,
+             "10": 10,
+             "J": 10,
+             "Q": 10,
+             "K": 10,
+             "T": 11}
+
+    return cards
+
+@bot.message_handler(commands=['blackjack'])
+def blackjack(message):
+    if len(message.text.split()) != 2:
+        bot.send_message(message.from_user.id, "Введите подходящую сумму.")
+        return
+
+    try:
+        sum_to_play = int(message.text.split()[1])
+        if (db.get_balance(message.from_user.id) - sum_to_play) < 0:
+            bot.send_message(message.from_user.id, "Недостаточно средств.")
+            return
+
+        cards = create_bj_cards()
+
+        db.set_bet(message.from_user.id, sum_to_play)
+        db.min_balance(message.from_user.id, sum_to_play)
+
+        first_player_card, first_dealer_card = random.choice(list(cards.keys())), random.choice(list(cards.keys()))
+        second_player_card = random.choice(list(cards.keys()))
+        player_value = 12 if first_player_card + second_player_card == "TT" else (cards[first_player_card] +
+                                                                                  cards[second_player_card])
+        dealer_value = cards[first_dealer_card]
+
+        db.add_played(message.from_user.id)
+        bot.send_message(message.from_user.id, f"Your cards: |{first_player_card}| |{second_player_card}| Value: {player_value}\n"
+                                                    f"Dealer cards: |{first_dealer_card}| |X| Value: {dealer_value}",
+                                                    reply_markup=blackjack_menu())
+    except Exception as ex:
+        bot.send_message(message.from_user.id, "Введите валидную сумму.")
+        print(ex)
+
+
+@bot.callback_query_handler(lambda query: query.data == 'stand')
+def bj_stand(call):
+    user_id = call.from_user.id
+
+    player_message, dealer_message = call.message.text.split("\n")[0].split(), call.message.text.split("\n")[1].split()
+    player_value, dealer_value = int(player_message[-1]), int(dealer_message[-1])
+    cards = create_bj_cards()
+
+    prev_cards = list()
+    prev_cards.append(dealer_message[2])
+
+    while dealer_value < 21 and dealer_value < player_value:
+        card = random.choice(list(cards.keys()))
+        if card == "T":
+            dealer_value += 1 if dealer_value + 11 > 21 else 11
+        else:
+            dealer_value += cards[card]
+        prev_cards.append(f'|{card}|')
+
+    new_message = (f'{" ".join(player_message)}\n'
+                   f'Dealer cards: {" ".join(prev_cards)} Value: {dealer_value}')
+
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=new_message)
+
+    if player_value < dealer_value <= 21:
+        bot.send_message(user_id, f"You lost!\nYour balance: {db.get_balance(user_id)}")
+        db.add_lose(user_id)
+    elif dealer_value == player_value:
+        db.add_balance(user_id, db.get_bet(user_id))
+        bot.send_message(user_id, f"Draw! Your balance: {db.get_balance(user_id)}")
+    else:
+        if player_value == 21:
+            db.add_balance(user_id, (db.get_bet(user_id) * 2.5))
+        else:
+            db.add_balance(user_id, (db.get_bet(user_id) * 2))
+
+        bot.send_message(user_id, f"You win!!! Your balance: {db.get_balance(user_id)}")
+        db.add_win(user_id)
+
+    bot.answer_callback_query(callback_query_id=call.id)
+
+
+@bot.callback_query_handler(lambda query: query.data == 'hit')
+def bj_hit(call, is_doubled=False):
+    player_message, dealer_message = call.message.text.split()[:-6], call.message.text.split()[-6:]
+
+    cards = create_bj_cards()
+    new_card = random.choice(list(cards.keys()))
+    if new_card == "T":
+        new_value = int(player_message[-1]) + 1 if int(player_message[-1]) + 11 > 21 else int(player_message[-1]) + 11
+    else:
+        new_value = int(player_message[-1]) + cards[new_card]
+
+    prev_cards = []
+    i = 2
+    while player_message[i] != "Value:":
+        prev_cards.append(player_message[i])
+        i += 1
+
+    prev_cards.append(f"|{new_card}|")
+    new_message = (f'Your cards: {" ".join(prev_cards)} Value: {new_value}\n'
+                   f'{" ".join(dealer_message)}')
+
+    if new_value > 21:
+        new_message = (f'Your cards: {" ".join([i for i in prev_cards])} Value: {new_value}\n'
+                       f'{" ".join(dealer_message)}')
+
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=new_message)
+        bot.send_message(call.from_user.id, f"You lost!\nYour balance: {db.get_balance(call.from_user.id)}")
+        db.add_lose(call.from_user.id)
+        bot.answer_callback_query(callback_query_id=call.id)
+    else:
+        if is_doubled:
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=new_message,
+                                  reply_markup=bj_stand_menu())
+            bot.answer_callback_query(callback_query_id=call.id)
+
+        else:
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=new_message,
+                                  reply_markup=blackjack_menu())
+            bot.answer_callback_query(callback_query_id=call.id)
+
+@bot.callback_query_handler(lambda query: query.data == 'bj_double')
+def blackjack_double(call):
+    user_id = call.from_user.id
+    bet = db.get_bet(user_id)
+
+    if (db.get_balance(user_id) - bet) < 0:
+        bot.send_message(user_id, "Not enough money. Choose Hit/Stand")
+        bot.answer_callback_query(callback_query_id=call.id)
+
+    else:
+        db.min_balance(user_id, bet)
+        bj_hit(call, True)
+
+
 @bot.message_handler(commands=['dice'])
 def random_dice(message):
     def win(n):
@@ -206,6 +352,10 @@ def random_dice(message):
         db.add_played(message.from_user.id)
         if db.get_balance(user_id) == 0 or not (db.min_balance(user_id, bet)):
             raise Exception
+        if random_int == 777:
+            bot.send_message(message.from_user.id, "777! Джекпот!!! 1000x")
+            win(1000)
+
         if 500 < random_int < 800:
             win(2)
         elif 800 < random_int < 950:
@@ -290,6 +440,9 @@ def bot_message(message):
         msg = bot.send_message(message.from_user.id, 'Напишите ID и сумму (ID СУММА).')
         bot.register_next_step_handler(msg, send_money)
 
+    elif message.text == 'Блэкджек':
+        bot.send_message(message.from_user.id, "Чтобы играть в Blackjack, напишите команду: /blackjack [ставка]")
+
     elif message.text == 'Игры':
         user_id = message.from_user.id
         bot.send_message(user_id, 'Выбирайте', reply_markup=games_menu())
@@ -317,7 +470,7 @@ def bot_message(message):
 
     elif message.text == 'Рандом кости':
         bot.reply_to(message,
-                     'Для игры используйте команду: /dice [ставка]. Возможные выйгрыши(число: [0; 500] - 2x; [500; 800] - 2.5x; [800; 995] - 8x, [995; 1000] - 200x)')
+                     'Для игры используйте команду: /dice [ставка].\nВозможные выйгрыши(число: [500; 800] - 2x; [800; 950] - 2.5x, [950; 995] - 8x, [995; 1000] - 200x)')
 
     elif message.text == 'Выйти':
         bot.reply_to(message, 'Хорошо, выходим...', reply_markup=main_menu())
@@ -361,6 +514,7 @@ def bot_message(message):
 
     elif message.text == 'Изменить ставку':
         bot.send_message(message.from_user.id, 'Выберите', reply_markup=games_menu())
+
     else:
         bot.send_message(message.from_user.id, 'Я тебя не понимаю :((((')
 
@@ -451,10 +605,12 @@ def send_money(message):
 
 def moreLess(message):
     inline = types.InlineKeyboardMarkup()
-    item1 = types.InlineKeyboardButton(f'Больше >> {100 - int(message.text)}%/{round(100 / (100 - int(message.text)), 2)}x',
-                                       callback_data='more')
-    item2 = types.InlineKeyboardButton(f'Меньше << {100 - (100 - int(message.text))}%/{round(100 / int(message.text), 2)}x',
-                                       callback_data='less')
+    item1 = types.InlineKeyboardButton(
+        f'Больше >> {100 - int(message.text)}%/{round(100 / (100 - int(message.text)), 2)}x',
+        callback_data='more')
+    item2 = types.InlineKeyboardButton(
+        f'Меньше << {100 - (100 - int(message.text))}%/{round(100 / int(message.text), 2)}x',
+        callback_data='less')
     inline.add(item1, item2)
 
     bot.reply_to(message, f'{message.text}', reply_markup=inline)
@@ -475,7 +631,6 @@ def dice(message):
 
         bot.send_message(message.from_user.id, 'Слишком большая ставка или неправильно введенное число!',
                          reply_markup=markup)
-
 
 
 @bot.callback_query_handler(lambda query: query.data in ['more', 'less'])
